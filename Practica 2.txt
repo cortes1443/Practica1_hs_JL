@@ -28,11 +28,11 @@ buscarEstudiante idEstudiante universidad =
     find (\v -> id v == idEstudiante) universidad
 
 -- Función para calcular el tiempo que un vehículo permaneció en el parqueadero
-tiempoEnUniversidad :: Vehiculo -> UTCTime -> NominalDiffTime
-tiempoEnUniversidad vehiculo tiempoActual =
-    case salida vehiculo of
-        Just tiempoSalida -> diffUTCTime tiempoSalida (entrada vehiculo)
-        Nothing           -> diffUTCTime tiempoActual (entrada vehiculo)
+tiempoEnUniversidad :: Estudiante -> UTCTime -> NominalDiffTime
+tiempoEnUniversidad estudiante tiempoActual =
+    case salida estudiante of
+        Just tiempoSalida -> diffUTCTime tiempoSalida (entrada estudiante)
+        Nothing           -> diffUTCTime tiempoActual (entrada estudiante)
 
 -- Función para guardar la información de los vehículos en un archivo de texto
 guardarUniversidad :: [Estudiante] -> IO ()
