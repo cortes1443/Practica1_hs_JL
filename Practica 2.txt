@@ -8,7 +8,6 @@ import Data.Maybe (mapMaybe)
 -- Definición del tipo de datos para representar la información de un vehículo
 data Vehiculo = Estudiante {
     id :: String,
-    nombre :: String,
     entrada :: UTCTime,
     salida :: Maybe UTCTime
 } deriving (Show, Read)
@@ -19,18 +18,18 @@ registrarEntrada idEstudiante tiempo universidad =
     Estudiante idEstudiante tiempo Nothing : universidad
 
 -- Función para registrar la salida de un vehículo del parqueadero
-registrarSalida :: String -> UTCTime -> [Vehiculo] -> [Vehiculo]
-registrarSalida placaVehiculo tiempo =
-    map (\v -> if placa v == placaVehiculo then v { salida = Just tiempo } else v)
+registrarSalida :: String -> UTCTime -> [Estudiante] -> [Estudiante]
+registrarSalida idEstudiante tiempo =
+    map (\v -> if id v == idEstudiante then v { salida = Just tiempo } else v)
 
 -- Función para buscar un vehículo por su placa
-buscarVehiculo :: String -> [Vehiculo] -> Maybe Vehiculo
-buscarVehiculo placaVehiculo parqueadero =
-    find (\v -> placa v == placaVehiculo) parqueadero
+buscarEstudiante :: String -> [Estudiante] -> Maybe Estudiante
+buscarEstudiante idEstudiante universidad =
+    find (\v -> id v == idEstudiante) universidad
 
 -- Función para calcular el tiempo que un vehículo permaneció en el parqueadero
-tiempoEnParqueadero :: Vehiculo -> UTCTime -> NominalDiffTime
-tiempoEnParqueadero vehiculo tiempoActual =
+tiempoEnUniversidad :: Vehiculo -> UTCTime -> NominalDiffTime
+tiempoEnUniversidad vehiculo tiempoActual =
     case salida vehiculo of
         Just tiempoSalida -> diffUTCTime tiempoSalida (entrada vehiculo)
         Nothing           -> diffUTCTime tiempoActual (entrada vehiculo)
