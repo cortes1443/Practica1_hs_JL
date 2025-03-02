@@ -92,11 +92,11 @@ leerUniversidad = do
 main :: IO ()
 main = do
     -- Cargar el parqueadero desde el archivo de texto
-    parqueadero <- cargarParqueadero
-    putStrLn "¡Bienvenido al Sistema de Gestión de Parqueadero!"
+    parqueauniversidad <- cargarUniversidad
+    putStrLn "¡Bienvenido al Sistema de Gestión de la Universidad!"
 
     -- Ciclo principal del programa
-    cicloPrincipal parqueadero
+    cicloPrincipal universidad
 
 -- Función para el ciclo principal del programa
 cicloPrincipal :: [Estudiante] -> IO ()
