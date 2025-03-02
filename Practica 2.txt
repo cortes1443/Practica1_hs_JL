@@ -6,7 +6,7 @@ import Control.Concurrent (threadDelay)
 import Data.Maybe (mapMaybe)
 
 -- Definición del tipo de datos para representar la información de un vehículo
-data Vehiculo = Estudiante {
+data Estudiante = Estudiante {
     id :: String,
     entrada :: UTCTime,
     salida :: Maybe UTCTime
