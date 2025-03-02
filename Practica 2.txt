@@ -99,48 +99,48 @@ main = do
     cicloPrincipal parqueadero
 
 -- Función para el ciclo principal del programa
-cicloPrincipal :: [Vehiculo] -> IO ()
-cicloPrincipal parqueadero = do
+cicloPrincipal :: [Estudiante] -> IO ()
+cicloPrincipal universidad = do
     putStrLn "Seleccione una opción:"
-    putStrLn "1. Registrar entrada de vehículo"
-    putStrLn "2. Registrar salida de vehículo"
-    putStrLn "3. Buscar vehículo por placa"
-    putStrLn "4. Listar los vehículos del parqueadero"
+    putStrLn "1. Registrar entrada de estudiante"
+    putStrLn "2. Registrar salida de estudiante"
+    putStrLn "3. Buscar estudiante por id"
+    putStrLn "4. Listar los estudiantes de la universidad"
     putStrLn "5. Salir"
 
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la id del vehículo:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            let parqueaderoActualizado = registrarEntrada placaVehiculo tiempoActual parqueadero
-            guardarParqueadero parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
+            let universidadActualizada = registrarEntrada idEstudiante tiempoActual universidad
+            guardarUniversidad universidadActualizada
+            cicloPrincipal universidadActualizada
         "2" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la id del estudiante:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            let parqueaderoActualizado = registrarSalida placaVehiculo tiempoActual parqueadero
-            guardarParqueadero parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
+            let universidadActualizada = registrarSalida idEstudiante tiempoActual universidad
+            guardarUniversidad universidadActualizada
+            cicloPrincipal universidadActualizada
         "3" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la id del estudiate:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            case buscarVehiculo placaVehiculo parqueadero of
-                Just vehiculo -> do
-                    let tiempoTotal = tiempoEnParqueadero vehiculo tiempoActual
-                    putStrLn $ "El vehículo con placa " ++ placaVehiculo ++ " se encuentra en el parqueadero."
-                    putStrLn $ "Tiempo en parqueadero: " ++ show tiempoTotal ++ " segundos."
-                Nothing -> putStrLn "Vehículo no encontrado en el parqueadero."
-            cicloPrincipal parqueadero
+            case buscarEstudiante idEstudiante universidad of
+                Just estudiante -> do
+                    let tiempoTotal = tiempoEnUniversidad estudiante tiempoActual
+                    putStrLn $ "El estudiante con id " ++ idEstudiante ++ " se encuentra en la universidad."
+                    putStrLn $ "Tiempo en la universidad: " ++ show tiempoTotal ++ " segundos."
+                Nothing -> putStrLn "Estudiante no encontrado en la universidad."
+            cicloPrincipal universidad
         "4" -> do
-            putStrLn "Mostrando Lista de carros dentro del parqueadero"
-            parqueaderoActualizado <- leerParqueadero
-            mapM_ (\v -> putStrLn $ "Placa: " ++ placa v ++ ", Entrada: " ++ show (entrada v) ++ ", Salida: " ++ show (salida v)) parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
-        "5" -> putStrLn "¡Hasta luego!"
+            putStrLn "Lista de estudiantes dentro de la universidad: "
+            universidadActualizada <- leerUniversidad
+            mapM_ (\v -> putStrLn $ "id: " ++ placa v ++ ", Entrada: " ++ show (entrada v) ++ ", Salida: " ++ show (salida v)) universidadActualizada
+            cicloPrincipal universidadActualizada
+        "5" -> putStrLn "Terminando..."
         _ -> do
             putStrLn "Opción no válida. Por favor, seleccione una opción válida."
             cicloPrincipal parqueadero
