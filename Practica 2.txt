@@ -4,43 +4,47 @@ import System.IO
 import Control.Exception
 import Control.Concurrent (threadDelay)
 import Data.Maybe (mapMaybe)
+import Text.Read (readMaybe)
 
--- Definición del tipo de datos para representar la información de un vehículo
-data Vehiculo = Estudiante {
-    id :: String,
+-- Definición del tipo de datos para representar la información de un estudiante
+data Estudiante = Estudiante {
+    idEstudiante :: String,
     entrada :: UTCTime,
     salida :: Maybe UTCTime
 } deriving (Show, Read)
 
--- Función para registrar la entrada de un vehículo al parqueadero
+-- Función para registrar la entrada de un estudiante a la universidad
 registrarEntrada :: String -> UTCTime -> [Estudiante] -> [Estudiante]
-registrarEntrada idEstudiante tiempo universidad =
-    Estudiante idEstudiante tiempo Nothing : universidad
+registrarEntrada id tiempo universidad =
+    Estudiante id tiempo Nothing : universidad
 
--- Función para registrar la salida de un vehículo del parqueadero
+-- Función para registrar la salida de un estudiante de la universidad
 registrarSalida :: String -> UTCTime -> [Estudiante] -> [Estudiante]
-registrarSalida idEstudiante tiempo =
-    map (\v -> if id v == idEstudiante then v { salida = Just tiempo } else v)
+registrarSalida id tiempo =
+    map (
+        \v -> if idEstudiante v == id then v { salida = Just tiempo } else v
+    )
 
--- Función para buscar un vehículo por su placa
+-- Función para buscar un estudiante por su ID
 buscarEstudiante :: String -> [Estudiante] -> Maybe Estudiante
-buscarEstudiante idEstudiante universidad =
-    find (\v -> id v == idEstudiante) universidad
+buscarEstudiante id universidad =
+    find (\v -> idEstudiante v == id) universidad
 
--- Función para calcular el tiempo que un vehículo permaneció en el parqueadero
-tiempoEnUniversidad :: Vehiculo -> UTCTime -> NominalDiffTime
-tiempoEnUniversidad vehiculo tiempoActual =
-    case salida vehiculo of
-        Just tiempoSalida -> diffUTCTime tiempoSalida (entrada vehiculo)
-        Nothing           -> diffUTCTime tiempoActual (entrada vehiculo)
+-- Función para calcular el tiempo que un estudiante ha permanecido en la universidad
+tiempoEnUniversidad :: Estudiante -> UTCTime -> NominalDiffTime
+tiempoEnUniversidad estudiante tiempoActual =
+    case salida estudiante of
+        Just tiempoSalida -> diffUTCTime tiempoSalida (entrada estudiante)
+        Nothing           -> diffUTCTime tiempoActual (entrada estudiante)
 
--- Función para guardar la información de los vehículos en un archivo de texto
-guardarParqueadero :: [Vehiculo] -> IO ()
-guardarParqueadero parqueadero = do
-    resultado <- reintentar 5 (writeFile "parqueadero.txt" (unlines (map mostrarVehiculo parqueadero)))
+-- Función para guardar la información de los estudiantes en un archivo de texto
+guardarUniversidad :: [Estudiante] -> IO ()
+guardarUniversidad universidad = do
+    resultado <- reintentar 5 (withFile "universidad.txt" WriteMode (\h ->
+        mapM_ (hPutStrLn h . mostrarEstudiante) universidad))
     case resultado of
-        Left ex -> putStrLn $ "Error guardando el parqueadero: " ++ show ex
-        Right _ -> putStrLn "Parqueadero guardado en el archivo parqueadero.txt."
+        Left ex -> putStrLn $ "Error guardando el registro de la universidad: " ++ show ex
+        Right _ -> putStrLn "Registro guardado en el archivo universidad.txt."
 
 -- Función para reintentar una operación en caso de error
 reintentar :: Int -> IO a -> IO (Either IOException a)
@@ -53,94 +57,78 @@ reintentar n accion = do
             reintentar (n - 1) accion
         Right val -> return (Right val)
 
--- Función para cargar la información de los vehículos desde un archivo de texto
-cargarParqueadero :: IO [Vehiculo]
-cargarParqueadero = do
-    resultado <- try (readFile "parqueadero.txt") :: IO (Either IOException String)
+-- Función para cargar la información de los estudiantes desde un archivo de texto
+cargarUniversidad :: IO [Estudiante]
+cargarUniversidad = do
+    resultado <- try (readFile "universidad.txt") :: IO (Either IOException String)
     case resultado of
         Left ex -> do
-            putStrLn $ "Error cargando el parqueadero: " ++ show ex
+            putStrLn $ "Error cargando el registro de la universidad: " ++ show ex
             return []
-        Right contenido -> do
-            let lineas = lines contenido
-            return (map leerVehiculo lineas)
-    where
-        leerVehiculo linea = read linea :: Vehiculo
+        Right contenido -> return (mapMaybe parsearEstudiante (lines contenido))
 
--- Función para mostrar la información de un vehículo
-mostrarVehiculo :: Vehiculo -> String
-mostrarVehiculo vehiculo =
-    placa vehiculo ++ "," ++ show (entrada vehiculo) ++ "," ++ show (salida vehiculo)
+-- Función para mostrar la información de un estudiante en formato CSV
+mostrarEstudiante :: Estudiante -> String
+mostrarEstudiante estudiante =
+    idEstudiante estudiante ++ "," ++ show (entrada estudiante) ++ "," ++ maybe "Nothing" show (salida estudiante)
 
--- Función para cargar la información de los vehículos desde un archivo de texto
-leerParqueadero :: IO [Vehiculo]
-leerParqueadero = do
-    contenido <- readFile "parqueadero.txt"
-    let lineas = lines contenido
-    return (mapMaybe parsearVehiculo lineas)
-    where
-        parsearVehiculo :: String -> Maybe Vehiculo
-        parsearVehiculo linea = case words linea of
-            [placa, entrada, salida] -> Just $ Vehiculo placa (read entrada) (readMaybeSalida salida)
-            _ -> Nothing
-
-        readMaybeSalida :: String -> Maybe UTCTime
-        readMaybeSalida "Nothing" = Nothing
-        readMaybeSalida salidaStr = Just (read salidaStr)
+-- Función para convertir una línea de texto en un estudiante
+parsearEstudiante :: String -> Maybe Estudiante
+parsearEstudiante linea = case words linea of
+    [id, entradaStr, salidaStr] -> do
+        entrada <- readMaybe entradaStr
+        let salida = readMaybe salidaStr
+        Just $ Estudiante id entrada salida
+    _ -> Nothing
 
 -- Función principal del programa
 main :: IO ()
 main = do
-    -- Cargar el parqueadero desde el archivo de texto
-    parqueadero <- cargarParqueadero
-    putStrLn "¡Bienvenido al Sistema de Gestión de Parqueadero!"
-
-    -- Ciclo principal del programa
-    cicloPrincipal parqueadero
+    universidad <- cargarUniversidad
+    putStrLn "¡Bienvenido al Sistema de Gestión de Estudiantes en la Universidad!"
+    cicloPrincipal universidad
 
 -- Función para el ciclo principal del programa
-cicloPrincipal :: [Vehiculo] -> IO ()
-cicloPrincipal parqueadero = do
+cicloPrincipal :: [Estudiante] -> IO ()
+cicloPrincipal universidad = do
     putStrLn "Seleccione una opción:"
-    putStrLn "1. Registrar entrada de vehículo"
-    putStrLn "2. Registrar salida de vehículo"
-    putStrLn "3. Buscar vehículo por placa"
-    putStrLn "4. Listar los vehículos del parqueadero"
+    putStrLn "1. Registrar entrada de estudiante"
+    putStrLn "2. Registrar salida de estudiante"
+    putStrLn "3. Buscar estudiante por ID"
+    putStrLn "4. Listar los estudiantes de la universidad"
     putStrLn "5. Salir"
 
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la ID del estudiante:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            let parqueaderoActualizado = registrarEntrada placaVehiculo tiempoActual parqueadero
-            guardarParqueadero parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
+            let universidadActualizada = registrarEntrada idEstudiante tiempoActual universidad
+            guardarUniversidad universidadActualizada
+            cicloPrincipal universidadActualizada
         "2" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la ID del estudiante:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            let parqueaderoActualizado = registrarSalida placaVehiculo tiempoActual parqueadero
-            guardarParqueadero parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
+            let universidadActualizada = registrarSalida idEstudiante tiempoActual universidad
+            guardarUniversidad universidadActualizada
+            cicloPrincipal universidadActualizada
         "3" -> do
-            putStrLn "Ingrese la placa del vehículo:"
-            placaVehiculo <- getLine
+            putStrLn "Ingrese la ID del estudiante:"
+            idEstudiante <- getLine
             tiempoActual <- getCurrentTime
-            case buscarVehiculo placaVehiculo parqueadero of
-                Just vehiculo -> do
-                    let tiempoTotal = tiempoEnParqueadero vehiculo tiempoActual
-                    putStrLn $ "El vehículo con placa " ++ placaVehiculo ++ " se encuentra en el parqueadero."
-                    putStrLn $ "Tiempo en parqueadero: " ++ show tiempoTotal ++ " segundos."
-                Nothing -> putStrLn "Vehículo no encontrado en el parqueadero."
-            cicloPrincipal parqueadero
+            case buscarEstudiante idEstudiante universidad of
+                Just estudiante -> do
+                    let tiempoTotal = tiempoEnUniversidad estudiante tiempoActual
+                    putStrLn $ "El estudiante con ID " ++ idEstudiante ++ " ha estado en la universidad por " ++ show tiempoTotal ++ " segundos."
+                Nothing -> putStrLn "Estudiante no encontrado en la universidad."
+            cicloPrincipal universidad
         "4" -> do
-            putStrLn "Mostrando Lista de carros dentro del parqueadero"
-            parqueaderoActualizado <- leerParqueadero
-            mapM_ (\v -> putStrLn $ "Placa: " ++ placa v ++ ", Entrada: " ++ show (entrada v) ++ ", Salida: " ++ show (salida v)) parqueaderoActualizado
-            cicloPrincipal parqueaderoActualizado
-        "5" -> putStrLn "¡Hasta luego!"
+            putStrLn "Lista de estudiantes dentro de la universidad:"
+            mapM_ (putStrLn . mostrarEstudiante) universidad
+            cicloPrincipal universidad
+        "5" -> putStrLn "Terminando..."
         _ -> do
             putStrLn "Opción no válida. Por favor, seleccione una opción válida."
-            cicloPrincipal parqueadero
+            cicloPrincipal universidad
